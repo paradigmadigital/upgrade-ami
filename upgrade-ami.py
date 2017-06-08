@@ -20,7 +20,7 @@ REGION = ''                                                                   #
 ## Zona en la que se trabajara                                                #
 ZONE = ''                                                                     #
 ## Grupo de seguridad con la que se lanzara la instancia                      #
-SECURITY_GROUP = '-'                                                          #
+SECURITY_GROUP = ''                                                           #
 ## Subnet del VPC                                                             #
 VPC_SUBNET = ''                                                               #
 ## Clave ssh remota con la que se lanzara la instancia                        #
@@ -162,7 +162,7 @@ instance:
     ip = []
     ids = {}
 
-    ## Ejecuta un bucle con el resultado de la buesqueda
+    ## Ejecuta un bucle con el resultado de la busqueda
     for result in results:
         ## Crea el playbook para crear instancias...
         playbook = dict(

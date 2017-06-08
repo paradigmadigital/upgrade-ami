@@ -5,7 +5,7 @@ Python playbook to upgrade all the AMIs matching the next tags:
 * `Version`: 'latest'
 * `Upgrade`: 'yes'
 
-Te reason of using python instead of a regular ansible playbook is that at the time of writing this, there's a bug that makes imposible the normal use of `include_role` with loops. More information [here](https://github.com/ansible/ansible/issues/21285). To learn how to program a playbook in Python, read the source code and read [this article](this article) and the Ansible's page dedicated to the [Python API](http://docs.ansible.com/ansible/dev_guide/developing_api.html#python-api-2-0).
+Te reason of using python instead of a regular ansible playbook is that at the time of writing this, there's a bug that makes imposible the normal use of `include_role` with loops. More information [here](https://github.com/ansible/ansible/issues/21285). To learn how to program a playbook in Python, read the source code and read [this article](https://serversforhackers.com/running-ansible-2-programmatically) and the Ansible's page dedicated to the [Python API](http://docs.ansible.com/ansible/dev_guide/developing_api.html#python-api-2-0).
 
 # Requirements
 
@@ -37,7 +37,7 @@ Anyway, it's important to add a date and that date _must_ be the last part of th
 
 ## Playbook Variables
 
-You may edit only the variables that are on the comment box at the begining.
+You may edit only the variables that are on the comment box at the beginning.
 
 ## Execute playbook
 
