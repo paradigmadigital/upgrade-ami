@@ -133,7 +133,7 @@ instance:
     ## Instancia las opciones
     options = Options(connection='local', module_path=None, forks=100,
                       become=None, become_method=None, become_user=None,
-                      check=True, remote_user=None, ansible_ssh_pass=None,
+                      check=True, remote_user=None, ansible_ssh_pass=SSH_PASS,
                       private_key_file=None)
 
     ## El playbook en si
@@ -200,8 +200,8 @@ instance:
 
         options = Options(connection='local', module_path=None, forks=100,
                           become=None, become_method=None, become_user=None,
-                          check=False, remote_user=None, ansible_ssh_pass=None,
-                          private_key_file=None)
+                          check=False, remote_user=None,
+                          ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
         extra_vars = yaml2json(extra_vars)
 
@@ -223,8 +223,8 @@ instance:
         ## Se concretan las opciones...
         options = Options(connection='ssh', module_path=None, forks=100,
                           become=True, become_method='sudo', become_user='root',
-                          check=False, remote_user=USER, ansible_ssh_pass=None,
-                          private_key_file=KEYFILE)
+                          check=False, remote_user=USER,
+                          ansible_ssh_pass=SSH_PASS, private_key_file=KEYFILE)
 
         ## ... el playbook ...
         playbook = dict(
@@ -266,8 +266,8 @@ ec2_id: {2}""".format(name, REGION, ids[value])
 
             options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
-                              check=False, remote_user=None, ansible_ssh_pass=None,
-                              private_key_file=None)
+                              check=False, remote_user=None,
+                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
             ## ... el playbook ...
             playbook = dict(
@@ -279,8 +279,9 @@ ec2_id: {2}""".format(name, REGION, ids[value])
                 roles=['./roles/create-ami/'])
 
             ## ... y se ejecuta.
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                             playbook=playbook, verbosity=VERBOSITY,
+            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+                                             options=options,playbook=playbook,
+                                             verbosity=VERBOSITY,
                                              host_list=['localhost'])
             playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -301,8 +302,8 @@ instance:
             extra_vars = yaml2json(extra_vars)
             options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
-                              check=False, remote_user=None, ansible_ssh_pass=None,
-                              private_key_file=None)
+                              check=False, remote_user=None,
+                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
             ## ... el playbook ...
             playbook = dict(
@@ -314,8 +315,9 @@ instance:
                 roles=['./roles/terminate-ec2/'])
 
             ## ... y se ejecuta
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                             playbook=playbook, verbosity=VERBOSITY,
+            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+                                             options=options, playbook=playbook,
+                                             verbosity=VERBOSITY,
                                              host_list=['localhost'])
             playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -334,8 +336,8 @@ resource:
 
             options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
-                              check=False, remote_user=None, ansible_ssh_pass=None,
-                              private_key_file=None)
+                              check=False, remote_user=None,
+                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
             ## ... el playbook ....
             playbook = dict(
@@ -347,8 +349,9 @@ resource:
                 roles=['./roles/create-tag/'])
 
             ## ... y se ejecuta.
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                             playbook=playbook, verbosity=VERBOSITY,
+            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+                                             options=options, playbook=playbook,
+                                             verbosity=VERBOSITY,
                                              host_list=['localhost'])
             playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -368,8 +371,8 @@ resource:
 
         options = Options(connection='local', module_path=None, forks=100,
                           become=None, become_method=None, become_user=None,
-                          check=False, remote_user=None, ansible_ssh_pass=None,
-                          private_key_file=None)
+                          check=False, remote_user=None,
+                          ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
         ## ... el playbook ...
         playbook = dict(
