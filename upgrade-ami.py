@@ -124,8 +124,7 @@ if __name__ == "__main__":
 instance:
   region : {0}
   tags:
-    Upgrade: 'yes'
-    Version: 'latest'""".format(REGION)
+    Upgrade: 'yes'""".format(REGION)
 
     ## Se pueden escribir en json directamente, como demuestra esta funcio
     extra_vars = yaml2json(extra_vars)
@@ -329,7 +328,6 @@ resource:
   id: {1}
   tags:
     Name: {2}
-    Version: 'latest'
     Upgrade: 'yes'""".format(REGION, new_ami_id, name)
 
             extra_vars = yaml2json(extra_vars)
@@ -364,7 +362,6 @@ resource:
   region: {0}
   id: {1}
   tags:
-    Version: 'old'
     Upgrade: 'no'""".format(REGION, result['ami_id'])
 
         extra_vars = yaml2json(extra_vars)
