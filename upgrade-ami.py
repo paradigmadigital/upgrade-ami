@@ -28,7 +28,7 @@ KEYPAIR = ''                                                                  #
 ## Clave ssh local con la que se hara ssh                                     #
 KEYFILE = ''                                                                  #
 ## Tipo de la instancia que se sacará. Se puede quedar el valor por defecto   #
-INSTANCE_TYPE = ''                                                            #
+INSTANCE_TYPE = {'paravirtual': 't1.micro', 'hvm': 't2.nano'}                 #
 ## Contraseña de sudo, de haberla                                             #
 SUDO_PASS = None                                                              #
 ## Contraseña con la que hacer ssh, de haberla                                #
@@ -40,7 +40,6 @@ VERBOSITY = 0                                                                 #
 ###############################################################################
 # Consideraciones                                                             #
 # extra_vars _debe_ estar en formato json                                     #
-#                                                                             #
 ###############################################################################
 
 # Creación e instanciación del objeto options
@@ -171,6 +170,7 @@ instance:
             gather_facts='no',
 
             roles=['./roles/create-instance/'])
+        virt_type = INSTANCE_TYPE[result['virtualization_type']]
 
         ## ... le pasa variables ...
         extra_vars = """
@@ -194,7 +194,7 @@ instance:
     volume_size: 20,
     delete_on_termination: true""".format(result['name'], result['ami_id'],
                                               USER, REGION, ZONE, KEYPAIR,
-                                              SECURITY_GROUP, INSTANCE_TYPE,
+                                              SECURITY_GROUP, virt_type,
                                               VPC_SUBNET, result['name'])
 
         options = Options(connection='local', module_path=None, forks=100,
@@ -210,13 +210,40 @@ instance:
 
         playbook_results = playbook_makeiteasy.run()
 
-        ## Se guardan las ip de las maquinas para poder hacer ssh luego
-        ip.append(playbook_results[0][1]['ec2']['instances'][0]['public_ip'])
+        ins_ip = [playbook_results[-1][1]['ec2']['instances'][0]['public_ip']]
+        ins_id = playbook_results[-1][1]['ec2']['instances'][0]['id']
 
-        ## Esto tan horrible crea un diccionario con el nombre de las instancias
-        ## asociado al ID de estas
-        ids[playbook_results[0][1]['ec2']['instances'][0]['tags']['Name']
-           ] = playbook_results[0][1]['ec2']['instances'][0]['id']
+        ## Crea un diccionario con el nombre de las instancias asociado al ID
+        ## de estas
+        # ids[name] = id
+
+        ## Se crean las opciones extra ...
+        options = Options(connection='ssh', module_path=None, forks=100,
+                          become=True, become_method='sudo', become_user='root',
+                          check=False, remote_user=USER,
+                          ansible_ssh_pass=SSH_PASS, private_key_file=KEYFILE)
+
+        ## ... el playbook ...
+        playbook = dict(
+            name="Upgrade requests",
+            gather_facts='yes',
+            hosts=ins_ip,
+
+            tasks=[
+                dict(
+                    action=dict(
+                        module='pip',
+                        args=dict(name='requests', state='latest')),
+                    register='piped')
+            ])
+
+
+
+        ## ... y se ejecuta.
+        playbook_makeiteasy = MakeItEasy(options=options, playbook=playbook,
+                                         verbosity=VERBOSITY, host_list=ip)
+        playbook_makeiteasy = playbook_makeiteasy.run()
+
 
         # Actualiza las maquinas virtuales
         ## Se concretan las opciones...
@@ -229,7 +256,7 @@ instance:
         playbook = dict(
             name="Upgrade machines",
             gather_facts='yes',
-            hosts=ip,
+            hosts=ins_ip,
 
             roles=['./roles/upgrade-all/']
         )
@@ -248,28 +275,27 @@ instance:
         ## Se presupone el formato: <ENVIROMENT>-<LOGIC_COMPONENT>-<RESOURCE_TYPE>
         ##-<COMPONENT>-<LOGIC_COMPONENT_VERSION>-<DATE>
         ## para los nombres de las AMIs
-
         # TODO: hacer que solo se guarde la ami si habian actualizaciones
-        for value in ids:
-            name = value[:value.rfind('-') + 1] + \
+        # for value in ids:
+        ami_name = result['name'][:result['name'].rfind('-') + 1] + \
                    datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
 
-            ## Se crean las opciones extra ...
-            extra_vars = """
+        ## Se crean las opciones extra ...
+        extra_vars = """
 ami:
   name: {0}
   region: {1}
-ec2_id: {2}""".format(name, REGION, ids[value])
+ec2_id: {2}""".format(ami_name, REGION, ins_id)
 
-            extra_vars = yaml2json(extra_vars)
+        extra_vars = yaml2json(extra_vars)
 
-            options = Options(connection='local', module_path=None, forks=100,
+        options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
                               ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
-            ## ... el playbook ...
-            playbook = dict(
+        ## ... el playbook ...
+        playbook = dict(
                 name="Create AMI",
                 hosts='localhost',
                 connection='local',
@@ -277,35 +303,35 @@ ec2_id: {2}""".format(name, REGION, ids[value])
 
                 roles=['./roles/create-ami/'])
 
-            ## ... y se ejecuta.
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+        ## ... y se ejecuta.
+        playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options,playbook=playbook,
                                              verbosity=VERBOSITY,
                                              host_list=['localhost'])
-            playbook_makeiteasy = playbook_makeiteasy.run()
+        playbook_makeiteasy = playbook_makeiteasy.run()
 
-            ## Se coge el id de las amis nuevas de una forma muy fea
-            for val in playbook_makeiteasy:
-                try:
-                    new_ami_id = val[1]['new_ami_id']
-                except:
-                    pass
+        ## Se coge el id de las amis nuevas de una forma muy fea
+        for val in playbook_makeiteasy:
+            try:
+                new_ami_id = val[1]['new_ami_id']
+            except:
+                pass
 
-            # Mata instancias
-            ## Se concretan las opciones extra ...
-            extra_vars = """
+        # Mata instancias
+        ## Se concretan las opciones extra ...
+        extra_vars = """
 instance:
   region: {0}
-  id: {1}""".format(REGION, ids[value])
+  id: {1}""".format(REGION, ins_id)
 
-            extra_vars = yaml2json(extra_vars)
-            options = Options(connection='local', module_path=None, forks=100,
+        extra_vars = yaml2json(extra_vars)
+        options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
                               ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
-            ## ... el playbook ...
-            playbook = dict(
+        ## ... el playbook ...
+        playbook = dict(
                 name="Kill instances",
                 hosts='localhost',
                 connection='local',
@@ -313,32 +339,48 @@ instance:
 
                 roles=['./roles/terminate-ec2/'])
 
-            ## ... y se ejecuta
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+        ## ... y se ejecuta
+        playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options, playbook=playbook,
                                              verbosity=VERBOSITY,
                                              host_list=['localhost'])
-            playbook_makeiteasy = playbook_makeiteasy.run()
+        playbook_makeiteasy = playbook_makeiteasy.run()
 
-            # Asignar tag a las nuevas AMIs
-            ## Se concretan las opciones extra ...
-            extra_vars = """
+        if 'INT' in result['name']:
+            component = 'INT'
+        elif 'PORTAL' in result['name']:
+            component = 'PORTAL'
+        else:
+            component = None
+
+        if 'PRE' in result['name']:
+            environment = 'PRE'
+        elif 'PRO' in result['name']:
+            environment = 'PRO'
+        else:
+            environment = None
+
+        # Asignar tag a las nuevas AMIs
+        ## Se concretan las opciones extra ...
+        extra_vars = """
 resource:
   region: {0}
   id: {1}
   tags:
-    Name: {2}
-    Upgrade: 'YES'""".format(REGION, new_ami_id, name)
+    Upgrade: 'YES'
+    Component: {2}
+    Environment: {3}
+  state: present""".format(REGION, new_ami_id, component, environment)
 
-            extra_vars = yaml2json(extra_vars)
+        extra_vars = yaml2json(extra_vars)
 
-            options = Options(connection='local', module_path=None, forks=100,
+        options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
                               ansible_ssh_pass=SSH_PASS, private_key_file=None)
 
-            ## ... el playbook ....
-            playbook = dict(
+        ## ... el playbook ....
+        playbook = dict(
                 name="Create tags",
                 hosts='localhost',
                 connection='local',
@@ -346,23 +388,22 @@ resource:
 
                 roles=['./roles/create-tag/'])
 
-            ## ... y se ejecuta.
-            playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
+        ## ... y se ejecuta.
+        playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options, playbook=playbook,
                                              verbosity=VERBOSITY,
                                              host_list=['localhost'])
-            playbook_makeiteasy = playbook_makeiteasy.run()
+        playbook_makeiteasy = playbook_makeiteasy.run()
 
-    # Quita los tags de las AMIs viejas
-    ## Bucle en los resultados de la primera busqueda
-    for result in results:
+        # Quita los tags de las AMIs viejas
         ## Se concretan las opciones extra ...
         extra_vars = """
 resource:
   region: {0}
   id: {1}
   tags:
-    Upgrade: 'NO'""".format(REGION, result['ami_id'])
+    Upgrade: 'NO'
+  state: present""".format(REGION, result['ami_id'])
 
         extra_vars = yaml2json(extra_vars)
 
