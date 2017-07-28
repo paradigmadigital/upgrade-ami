@@ -1,7 +1,12 @@
 - src: git+https://git.paradigmadigital.com/ansible/create-ami
-  version: develop
+  version: v0.1
 - src: git+https://git.paradigmadigital.com/ansible/create-instance
+  version: v0.1
 - src: git+https://git.paradigmadigital.com/ansible/create-tag
+  version: v0.1
 - src: git+https://git.paradigmadigital.com/ansible/find-ami
+  version: v0.1
 - src: git+https://git.paradigmadigital.com/ansible/terminate-ec2
+  version: v0.1
 - src: git+https://git.paradigmadigital.com/ansible/upgrade-all
+  version: v0.1
