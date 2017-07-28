@@ -120,7 +120,7 @@ if __name__ == "__main__":
     # Busca amis a actualizar
     ## Variables extra en formato yaml
     extra_vars = """
-instance:
+base_ami:
   region : {0}
   tags:
     Upgrade: 'YES'""".format(REGION)
@@ -153,12 +153,12 @@ instance:
     ## Se hardcodea en la posicion 0 y 1 por que corresponde al host 'localhost'
     ## En AWS es siempre asi. Se hardcodea 'ami_id' por que es el nombre que
     ## registra el playbook
+
     results = playbook_makeiteasy[0][1]['ami_id']['results']
 
     # Crea instancias
     ## Inicia un par de variables
     ip = []
-    ids = {}
 
     ## Ejecuta un bucle con el resultado de la busqueda
     for result in results:
@@ -212,10 +212,6 @@ instance:
 
         ins_ip = [playbook_results[-1][1]['ec2']['instances'][0]['public_ip']]
         ins_id = playbook_results[-1][1]['ec2']['instances'][0]['id']
-
-        ## Crea un diccionario con el nombre de las instancias asociado al ID
-        ## de estas
-        # ids[name] = id
 
         ## Se crean las opciones extra ...
         options = Options(connection='ssh', module_path=None, forks=100,
@@ -276,7 +272,7 @@ instance:
         ##-<COMPONENT>-<LOGIC_COMPONENT_VERSION>-<DATE>
         ## para los nombres de las AMIs
         # TODO: hacer que solo se guarde la ami si habian actualizaciones
-        # for value in ids:
+
         ami_name = result['name'][:result['name'].rfind('-') + 1] + \
                    datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
 
