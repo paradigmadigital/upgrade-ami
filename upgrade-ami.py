@@ -120,7 +120,7 @@ if __name__ == "__main__":
     # Busca amis a actualizar
     ## Variables extra en formato yaml
     extra_vars = """
-instance:
+base_ami:
   region : {0}
   tags:
     Upgrade: 'YES'""".format(REGION)
