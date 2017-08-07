@@ -318,7 +318,7 @@ ec2_id: {2}""".format(ami_name, REGION, ins_id)
         extra_vars = """
 instance:
   region: {0}
-  ec2_id: {1}""".format(REGION, ins_id)
+ec2_id: {1}""".format(REGION, ins_id)
 
         extra_vars = yaml2json(extra_vars)
         options = Options(connection='local', module_path=None, forks=100,
