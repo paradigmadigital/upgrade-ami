@@ -1,16 +1,19 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import argparse
 import datetime
-from collections import namedtuple
 from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.inventory import Inventory
 from ansible.parsing.dataloader import DataLoader
 from ansible.playbook.play import Play
 from ansible.utils.display import Display
 from ansible.vars import VariableManager
-import yaml
+from collections import namedtuple
 from sys import exit
+
+import yaml
+
 
 ###############################################################################
 ## Tipo de la instancia que se sacará                                         #
@@ -97,8 +100,6 @@ class MakeItEasy:
         return tqm
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description='Upgrade mis')
     parser.add_argument('-u', '--user', dest='user',
                         metavar='user')
