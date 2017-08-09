@@ -36,7 +36,28 @@ Anyway, it's important to add a date and that date _must_ be the last part of th
 
 ## Playbook Variables
 
-You may edit only the variables that are on the comment box at the beginning.
+They're all passed as parameters:
+
+```bash
+usage: upgrade-ami.py [-h] [-u user] [-r region] [-z zone] [-s security_group]
+                      [-v vpc_subnet] [-k keypair] [-e keyfile] [-d keyfile]
+                      [-p ssh_pass] [-i verbosity]
+
+Upgrade mis
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -u user, --user user
+  -r region, --region region
+  -z zone, --zone zone
+  -s security_group, --security-group security_group
+  -v vpc_subnet, --vpc-subnet vpc_subnet
+  -k keypair, --keypair keypair
+  -e keyfile, --keyfile keyfile
+  -d keyfile, --sudo-pass keyfile
+  -p ssh_pass, --ssh-pass ssh_pass
+  -i verbosity, --verbosity verbosity
+```
 
 ## Execute playbook
 

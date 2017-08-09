@@ -10,31 +10,11 @@ from ansible.playbook.play import Play
 from ansible.utils.display import Display
 from ansible.vars import VariableManager
 import yaml
+from sys import exit
 
 ###############################################################################
-# Se debe modificar lo siguiente                                              #
-## Usuario con el que hacer ssh                                               #
-USER = ''                                                                     #
-## Region de aws en la que se trabajara                                       #
-REGION = ''                                                                   #
-## Zona en la que se trabajara                                                #
-ZONE = ''                                                                     #
-## Grupo de seguridad con la que se lanzara la instancia                      #
-SECURITY_GROUP = ''                                                           #
-## Subnet del VPC                                                             #
-VPC_SUBNET = ''                                                               #
-## Clave ssh remota con la que se lanzara la instancia                        #
-KEYPAIR = ''                                                                  #
-## Clave ssh local con la que se hara ssh                                     #
-KEYFILE = ''                                                                  #
-## Tipo de la instancia que se sacará. Se puede quedar el valor por defecto   #
+## Tipo de la instancia que se sacará                                         #
 INSTANCE_TYPE = {'paravirtual': 't1.micro', 'hvm': 't2.nano'}                 #
-## Contraseña de sudo, de haberla                                             #
-SUDO_PASS = None                                                              #
-## Contraseña con la que hacer ssh, de haberla                                #
-SSH_PASS = None                                                               #
-## Pues eso                                                                   #
-VERBOSITY = 0                                                                 #
 ###############################################################################
 
 ###############################################################################
@@ -117,13 +97,62 @@ class MakeItEasy:
         return tqm
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Upgrade mis')
+    parser.add_argument('-u', '--user', dest='user',
+                        metavar='user')
+    parser.add_argument('-r', '--region', dest='region',
+                        metavar='region')
+    parser.add_argument('-z', '--zone', dest='zone',
+                        metavar='zone')
+    parser.add_argument('-s', '--security-group', dest='security_group',
+                         metavar='security_group')
+    parser.add_argument('-v', '--vpc-subnet', dest='vpc_subnet',
+                         metavar='vpc_subnet')
+    parser.add_argument('-k', '--keypair', dest='keypair',
+                        metavar='keypair')
+    parser.add_argument('-e', '--keyfile', dest='keyfile',
+                        metavar='keyfile')
+    parser.add_argument('-d', '--sudo-pass', dest='sudo_pass',
+                        metavar='keyfile')
+    parser.add_argument('-p', '--ssh-pass', dest='ssh_pass',
+                        metavar='ssh_pass')
+    parser.add_argument('-i', '--verbosity', dest='verbosity',
+                        metavar='verbosity')
+
+
+    args = parser.parse_args()
+
+    if not args.user:
+        print('You have to establish a user.')
+        exit()
+    elif not args.region:
+        print('You have to establish a region.')
+        exit()
+    elif not args.zone:
+        print('You have to establish a zone.')
+        exit()
+    elif not args.security_group:
+        print('You have to establish a security group.')
+        exit()
+    elif not args.vpc_subnet:
+        print('You have to establish a VPC subnet.')
+        exit()
+    elif not args.keypair:
+        print('You have to establish a keypair.')
+        exit()
+
+    if not args.verbosity:
+        args.verbosity = 0
+
     # Busca amis a actualizar
     ## Variables extra en formato yaml
     extra_vars = """
 base_ami:
   region : {0}
   tags:
-    Upgrade: 'YES'""".format(REGION)
+    Upgrade: 'YES'""".format(args.region)
 
     ## Se pueden escribir en json directamente, como demuestra esta funcio
     extra_vars = yaml2json(extra_vars)
@@ -131,8 +160,8 @@ base_ami:
     ## Instancia las opciones
     options = Options(connection='local', module_path=None, forks=100,
                       become=None, become_method=None, become_user=None,
-                      check=True, remote_user=None, ansible_ssh_pass=SSH_PASS,
-                      private_key_file=None)
+                      check=True, remote_user=None,
+                      ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
     ## El playbook en si
     playbook = dict(
@@ -146,7 +175,7 @@ base_ami:
 
     ## Se pasa las variables a la clase gestora de playbooks...
     playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                     playbook=playbook, verbosity=VERBOSITY)
+                                     playbook=playbook, verbosity=args.verbosity)
     ## ... y se ejecuta
     playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -193,20 +222,21 @@ instance:
     device_name: /dev/sda1
     volume_size: 20,
     delete_on_termination: true""".format(result['name'], result['ami_id'],
-                                              USER, REGION, ZONE, KEYPAIR,
-                                              SECURITY_GROUP, virt_type,
-                                              VPC_SUBNET, result['name'])
+                                          args.user, args.region, args.zone,
+                                          args.keypair, args.security_group,
+                                          virt_type, args.vpc_subnet,
+                                          result['name'])
 
         options = Options(connection='local', module_path=None, forks=100,
                           become=None, become_method=None, become_user=None,
                           check=False, remote_user=None,
-                          ansible_ssh_pass=SSH_PASS, private_key_file=None)
+                          ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
         extra_vars = yaml2json(extra_vars)
 
         ## ... y ejecuta el playbook
         playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                         playbook=playbook, verbosity=VERBOSITY)
+                                         playbook=playbook, verbosity=args.verbosity)
 
         playbook_results = playbook_makeiteasy.run()
 
@@ -216,8 +246,9 @@ instance:
         ## Se crean las opciones extra ...
         options = Options(connection='ssh', module_path=None, forks=100,
                           become=True, become_method='sudo', become_user='root',
-                          check=False, remote_user=USER,
-                          ansible_ssh_pass=SSH_PASS, private_key_file=KEYFILE)
+                          check=False, remote_user=args.user,
+                          ansible_ssh_pass=args.ssh_pass,
+                          private_key_file=args.keyfile)
 
         ## ... el playbook ...
         playbook = dict(
@@ -237,7 +268,7 @@ instance:
 
         ## ... y se ejecuta.
         playbook_makeiteasy = MakeItEasy(options=options, playbook=playbook,
-                                         verbosity=VERBOSITY, host_list=ip)
+                                         verbosity=args.verbosity, host_list=ip)
         playbook_makeiteasy = playbook_makeiteasy.run()
 
 
@@ -245,8 +276,9 @@ instance:
         ## Se concretan las opciones...
         options = Options(connection='ssh', module_path=None, forks=100,
                           become=True, become_method='sudo', become_user='root',
-                          check=False, remote_user=USER,
-                          ansible_ssh_pass=SSH_PASS, private_key_file=KEYFILE)
+                          check=False, remote_user=args.user,
+                          ansible_ssh_pass=args.ssh_pass,
+                          private_key_file=args.keyfile)
 
         ## ... el playbook ...
         playbook = dict(
@@ -263,7 +295,7 @@ instance:
 
         ## ... y se ejecuta el playbook
         playbook_makeiteasy = MakeItEasy(options=options, playbook=playbook,
-                                         verbosity=VERBOSITY, host_list=ip)
+                                         verbosity=args.verbosity, host_list=ip)
         playbook_makeiteasy = playbook_makeiteasy.run()
 
         # Se crean las amis
@@ -281,14 +313,14 @@ instance:
 ami:
   name: {0}
   region: {1}
-ec2_id: {2}""".format(ami_name, REGION, ins_id)
+ec2_id: {2}""".format(ami_name, args.region, ins_id)
 
         extra_vars = yaml2json(extra_vars)
 
         options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
-                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
+                              ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
         ## ... el playbook ...
         playbook = dict(
@@ -302,7 +334,7 @@ ec2_id: {2}""".format(ami_name, REGION, ins_id)
         ## ... y se ejecuta.
         playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options,playbook=playbook,
-                                             verbosity=VERBOSITY,
+                                             verbosity=args.verbosity,
                                              host_list=['localhost'])
         playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -318,13 +350,13 @@ ec2_id: {2}""".format(ami_name, REGION, ins_id)
         extra_vars = """
 instance:
   region: {0}
-ec2_id: {1}""".format(REGION, ins_id)
+ec2_id: {1}""".format(args.region, ins_id)
 
         extra_vars = yaml2json(extra_vars)
         options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
-                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
+                              ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
         ## ... el playbook ...
         playbook = dict(
@@ -338,7 +370,7 @@ ec2_id: {1}""".format(REGION, ins_id)
         ## ... y se ejecuta
         playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options, playbook=playbook,
-                                             verbosity=VERBOSITY,
+                                             verbosity=args.verbosity,
                                              host_list=['localhost'])
         playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -366,14 +398,14 @@ resource:
     Upgrade: 'YES'
     Component: {2}
     Environment: {3}
-  state: present""".format(REGION, new_ami_id, component, environment)
+  state: present""".format(args.region, new_ami_id, component, environment)
 
         extra_vars = yaml2json(extra_vars)
 
         options = Options(connection='local', module_path=None, forks=100,
                               become=None, become_method=None, become_user=None,
                               check=False, remote_user=None,
-                              ansible_ssh_pass=SSH_PASS, private_key_file=None)
+                              ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
         ## ... el playbook ....
         playbook = dict(
@@ -387,7 +419,7 @@ resource:
         ## ... y se ejecuta.
         playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars,
                                              options=options, playbook=playbook,
-                                             verbosity=VERBOSITY,
+                                             verbosity=args.verbosity,
                                              host_list=['localhost'])
         playbook_makeiteasy = playbook_makeiteasy.run()
 
@@ -399,14 +431,14 @@ resource:
   id: {1}
   tags:
     Upgrade: 'NO'
-  state: present""".format(REGION, result['ami_id'])
+  state: present""".format(args.region, result['ami_id'])
 
         extra_vars = yaml2json(extra_vars)
 
         options = Options(connection='local', module_path=None, forks=100,
                           become=None, become_method=None, become_user=None,
                           check=False, remote_user=None,
-                          ansible_ssh_pass=SSH_PASS, private_key_file=None)
+                          ansible_ssh_pass=args.ssh_pass, private_key_file=None)
 
         ## ... el playbook ...
         playbook = dict(
@@ -419,6 +451,6 @@ resource:
 
         ## ... y se ejecuta.
         playbook_makeiteasy = MakeItEasy(extra_vars=extra_vars, options=options,
-                                         playbook=playbook, verbosity=VERBOSITY,
+                                         playbook=playbook, verbosity=args.verbosity,
                                          host_list=['localhost'])
         playbook_makeiteasy = playbook_makeiteasy.run()
