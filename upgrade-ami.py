@@ -127,21 +127,27 @@ if __name__ == "__main__":
 
     if not args.user:
         print('You have to establish a user.')
+        parser.print_help()
         exit()
     elif not args.region:
         print('You have to establish a region.')
+        parser.print_help()
         exit()
     elif not args.zone:
         print('You have to establish a zone.')
+        parser.print_help()
         exit()
     elif not args.security_group:
         print('You have to establish a security group.')
+        parser.print_help()
         exit()
     elif not args.vpc_subnet:
         print('You have to establish a VPC subnet.')
+        parser.print_help()
         exit()
     elif not args.keypair:
         print('You have to establish a keypair.')
+        parser.print_help()
         exit()
 
     if not args.verbosity:
