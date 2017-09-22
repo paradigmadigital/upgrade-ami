@@ -193,9 +193,6 @@ base_ami:
     results = playbook_makeiteasy[0][1]['ami_id']['results']
 
     # Crea instancias
-    ## Inicia un par de variables
-    ip = []
-
     ## Ejecuta un bucle con el resultado de la busqueda
     for result in results:
         ## Crea el playbook para crear instancias...
@@ -271,11 +268,9 @@ instance:
                     register='piped')
             ])
 
-
-
         ## ... y se ejecuta.
         playbook_makeiteasy = MakeItEasy(options=options, playbook=playbook,
-                                         verbosity=args.verbosity, host_list=ip)
+                                         verbosity=args.verbosity, host_list=ins_ip)
         playbook_makeiteasy = playbook_makeiteasy.run()
 
 
@@ -302,7 +297,7 @@ instance:
 
         ## ... y se ejecuta el playbook
         playbook_makeiteasy = MakeItEasy(options=options, playbook=playbook,
-                                         verbosity=args.verbosity, host_list=ip)
+                                         verbosity=args.verbosity, host_list=ins_ip)
         playbook_makeiteasy = playbook_makeiteasy.run()
 
         # Se crean las amis
