@@ -10,7 +10,7 @@ from ansible.playbook.play import Play
 from ansible.utils.display import Display
 from ansible.vars import VariableManager
 from collections import namedtuple
-from sys import exit
+from sys import exit, sleep
 
 import yaml
 
@@ -281,7 +281,8 @@ instance:
                           check=False, remote_user=args.user,
                           ansible_ssh_pass=args.ssh_pass,
                           private_key_file=args.keyfile)
-
+        print("Sleeping for five minutes...")
+        sleep(300)
         ## ... el playbook ...
         playbook = dict(
             name="Upgrade machines",
